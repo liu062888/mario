@@ -1,11 +1,20 @@
 [
   {
+    "__type__": "cc.SceneAsset",
+    "_name": "GameScene",
+    "_objFlags": 0,
+    "scene": {
+      "__id__": 1
+    },
+    "asyncLoadAssets": false
+  },
+  {
     "__type__": "cc.Scene",
     "_name": "GameScene",
     "_objFlags": 0,
     "_children": [
       {
-        "__id__": 1
+        "__id__": 2
       }
     ],
     "_active": true,
@@ -34,29 +43,29 @@
     "_name": "Canvas",
     "_objFlags": 0,
     "_parent": {
-      "__id__": 0
+      "__id__": 1
     },
     "_children": [
       {
-        "__id__": 3
+        "__id__": 4
       },
       {
-        "__id__": 6
-      },
-      {
-        "__id__": 8
+        "__id__": 7
       },
       {
         "__id__": 9
+      },
+      {
+        "__id__": 10
       }
     ],
     "_active": true,
     "_components": [
       {
-        "__id__": 2
+        "__id__": 3
       },
       {
-        "__id__": 10
+        "__id__": 11
       }
     ],
     "_prefab": null,
@@ -111,7 +120,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 1
+      "__id__": 2
     },
     "_enabled": true,
     "_designResolution": {
@@ -127,16 +136,16 @@
     "_name": "GameManagerNode",
     "_objFlags": 0,
     "_parent": {
-      "__id__": 1
+      "__id__": 2
     },
     "_children": [],
     "_active": true,
     "_components": [
       {
-        "__id__": 4
+        "__id__": 5
       },
       {
-        "__id__": 5
+        "__id__": 6
       }
     ],
     "_prefab": null,
@@ -191,7 +200,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 3
+      "__id__": 4
     },
     "_enabled": true
   },
@@ -200,7 +209,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 3
+      "__id__": 4
     },
     "_enabled": true
   },
@@ -209,13 +218,13 @@
     "_name": "UIManager",
     "_objFlags": 0,
     "_parent": {
-      "__id__": 1
+      "__id__": 2
     },
     "_children": [],
     "_active": true,
     "_components": [
       {
-        "__id__": 7
+        "__id__": 8
       }
     ],
     "_prefab": null,
@@ -270,7 +279,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 6
+      "__id__": 7
     },
     "_enabled": true
   },
@@ -279,7 +288,7 @@
     "_name": "GameWorld",
     "_objFlags": 0,
     "_parent": {
-      "__id__": 1
+      "__id__": 2
     },
     "_children": [],
     "_active": true,
@@ -336,7 +345,7 @@
     "_name": "DontDestroy",
     "_objFlags": 0,
     "_parent": {
-      "__id__": 1
+      "__id__": 2
     },
     "_children": [],
     "_active": false,
@@ -393,7 +402,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 1
+      "__id__": 2
     },
     "_enabled": true,
     "alignMode": 1,
