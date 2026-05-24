@@ -1,0 +1,36 @@
+{
+    "group-list": [
+        {"name": "default"},
+        {"name": "player"},
+        {"name": "ground"},
+        {"name": "enemy"},
+        {"name": "item"}
+    ],
+    "collision-matrix": [
+        [false],
+        [false, false],
+        [false, true, false],
+        [false, true, true, false],
+        [false, true, true, false, false]
+    ],
+    "start-scene": "db://assets/Scene/StartMenu.fire",
+    "design-resolution-width": 960,
+    "design-resolution-height": 640,
+    "fit-height": false,
+    "fit-width": false,
+    "use-project-asset-bundle": false,
+    "use-builtin-asset-bundle": false,
+    "simulator-orientation": "portrait",
+    "use-texture-compression": false,
+    "simulator-resolution": {
+        "width": 960,
+        "height": 640
+    },
+    "include-default-assets": true,
+    "packageName": "com.webmario.game",
+    "scenes": [
+        {"url": "db://assets/Scene/StartMenu.fire"},
+        {"url": "db://assets/Scene/LevelSelect.fire"},
+        {"url": "db://assets/Scene/GameScene.fire"}
+    ]
+}
