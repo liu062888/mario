@@ -77,3 +77,4 @@ export default class EnemyGoomba extends cc.Component {
         }
     }
 }
+

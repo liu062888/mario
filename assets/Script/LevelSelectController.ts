@@ -113,3 +113,4 @@ export default class LevelSelectController extends cc.Component {
         cc.director.loadScene('StartMenu');
     }
 }
+

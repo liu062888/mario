@@ -163,3 +163,4 @@ export default class UIManager extends cc.Component {
     onMenuButton() { GameManager.instance && GameManager.instance.goToMainMenu(); }
     onNextLevelButton() { GameManager.instance && GameManager.instance.goToMainMenu(); }
 }
+

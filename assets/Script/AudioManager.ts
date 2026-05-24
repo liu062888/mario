@@ -44,3 +44,4 @@ export default class AudioManager extends cc.Component {
         });
     }
 }
+

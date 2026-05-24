@@ -29,3 +29,4 @@ export default class Mushroom extends cc.Component {
         }
     }
 }
+

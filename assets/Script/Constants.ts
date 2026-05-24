@@ -48,3 +48,4 @@ export const ANIM_GOOMBA_DEAD  = ['Goomba_2.png'];
 export const ANIM_MUSHROOM     = ['items_0.png'];
 export const ANIM_QBLOCK_ACTIVE  = ['items_10.png', 'items_11.png', 'items_12.png'];
 export const ANIM_QBLOCK_USED    = ['items_10.png'];
+

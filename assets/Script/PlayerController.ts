@@ -317,3 +317,4 @@ export default class PlayerController extends cc.Component {
         this.gameWorld.x = worldX;
     }
 }
+

@@ -380,3 +380,4 @@ export default class GameManager extends cc.Component {
         cc.director.loadScene('StartMenu');
     }
 }
+
