@@ -1,0 +1,6 @@
+library/
+local/
+temp/
+*.js.map
+build/
+node_modules/

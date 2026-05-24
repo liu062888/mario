@@ -3,27 +3,100 @@
     "__type__": "cc.Scene",
     "_name": "GameScene",
     "_objFlags": 0,
-    "_children": [{"__id__": 1}],
+    "_children": [
+      {
+        "__id__": 1
+      }
+    ],
     "_active": true,
     "_components": [],
     "_prefab": null,
-    "autoReleaseAssets": false
+    "autoReleaseAssets": false,
+    "_trs": {
+      "__type__": "TypedArray",
+      "ctor": "Float64Array",
+      "array": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
   },
   {
     "__type__": "cc.Node",
     "_name": "Canvas",
     "_objFlags": 0,
-    "_parent": {"__id__": 0},
-    "_children": [{"__id__": 3}, {"__id__": 6}, {"__id__": 9}],
+    "_parent": {
+      "__id__": 0
+    },
+    "_children": [
+      {
+        "__id__": 3
+      },
+      {
+        "__id__": 6
+      },
+      {
+        "__id__": 9
+      }
+    ],
     "_active": true,
-    "_components": [{"__id__": 2}],
+    "_components": [
+      {
+        "__id__": 2
+      },
+      {
+        "__id__": 10
+      }
+    ],
     "_prefab": null,
     "_opacity": 255,
-    "_color": {"__type__": "cc.Color", "r": 0, "g": 0, "b": 0, "a": 255},
-    "_contentSize": {"__type__": "cc.Size", "width": 960, "height": 640},
-    "_anchorPoint": {"__type__": "cc.Vec2", "x": 0.5, "y": 0.5},
-    "_trs": {"__type__": "TypedArray", "ctor": "Float64Array", "array": [0, 0, 0, 0, 0, 0, 1, 1, 1, 1]},
-    "_eulerAngles": {"__type__": "cc.Vec3", "x": 0, "y": 0, "z": 0},
+    "_color": {
+      "__type__": "cc.Color",
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 255
+    },
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 960,
+      "height": 640
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0.5,
+      "y": 0.5
+    },
+    "_trs": {
+      "__type__": "TypedArray",
+      "ctor": "Float64Array",
+      "array": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "_eulerAngles": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "_skewX": 0,
     "_skewY": 0,
     "_is3DNode": false,
@@ -34,9 +107,15 @@
     "__type__": "cc.Canvas",
     "_name": "",
     "_objFlags": 0,
-    "node": {"__id__": 1},
+    "node": {
+      "__id__": 1
+    },
     "_enabled": true,
-    "_designResolution": {"__type__": "cc.Size", "width": 960, "height": 640},
+    "_designResolution": {
+      "__type__": "cc.Size",
+      "width": 960,
+      "height": 640
+    },
     "_fitHeight": false,
     "_fitWidth": false
   },
@@ -44,17 +123,60 @@
     "__type__": "cc.Node",
     "_name": "GameManagerNode",
     "_objFlags": 0,
-    "_parent": {"__id__": 1},
+    "_parent": {
+      "__id__": 1
+    },
     "_children": [],
     "_active": true,
-    "_components": [{"__id__": 4}, {"__id__": 5}],
+    "_components": [
+      {
+        "__id__": 4
+      },
+      {
+        "__id__": 5
+      }
+    ],
     "_prefab": null,
     "_opacity": 255,
-    "_color": {"__type__": "cc.Color", "r": 255, "g": 255, "b": 255, "a": 255},
-    "_contentSize": {"__type__": "cc.Size", "width": 0, "height": 0},
-    "_anchorPoint": {"__type__": "cc.Vec2", "x": 0.5, "y": 0.5},
-    "_trs": {"__type__": "TypedArray", "ctor": "Float64Array", "array": [0, 0, 0, 0, 0, 0, 1, 1, 1, 1]},
-    "_eulerAngles": {"__type__": "cc.Vec3", "x": 0, "y": 0, "z": 0},
+    "_color": {
+      "__type__": "cc.Color",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "a": 255
+    },
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 0,
+      "height": 0
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0.5,
+      "y": 0.5
+    },
+    "_trs": {
+      "__type__": "TypedArray",
+      "ctor": "Float64Array",
+      "array": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "_eulerAngles": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "_skewX": 0,
     "_skewY": 0,
     "_is3DNode": false,
@@ -65,31 +187,75 @@
     "__type__": "GameManager",
     "_name": "",
     "_objFlags": 0,
-    "node": {"__id__": 3},
+    "node": {
+      "__id__": 3
+    },
     "_enabled": true
   },
   {
     "__type__": "AudioManager",
     "_name": "",
     "_objFlags": 0,
-    "node": {"__id__": 3},
+    "node": {
+      "__id__": 3
+    },
     "_enabled": true
   },
   {
     "__type__": "cc.Node",
     "_name": "UIManager",
     "_objFlags": 0,
-    "_parent": {"__id__": 1},
+    "_parent": {
+      "__id__": 1
+    },
     "_children": [],
     "_active": true,
-    "_components": [{"__id__": 7}],
+    "_components": [
+      {
+        "__id__": 7
+      }
+    ],
     "_prefab": null,
     "_opacity": 255,
-    "_color": {"__type__": "cc.Color", "r": 255, "g": 255, "b": 255, "a": 255},
-    "_contentSize": {"__type__": "cc.Size", "width": 0, "height": 0},
-    "_anchorPoint": {"__type__": "cc.Vec2", "x": 0.5, "y": 0.5},
-    "_trs": {"__type__": "TypedArray", "ctor": "Float64Array", "array": [0, 0, 0, 0, 0, 0, 1, 1, 1, 1]},
-    "_eulerAngles": {"__type__": "cc.Vec3", "x": 0, "y": 0, "z": 0},
+    "_color": {
+      "__type__": "cc.Color",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "a": 255
+    },
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 0,
+      "height": 0
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0.5,
+      "y": 0.5
+    },
+    "_trs": {
+      "__type__": "TypedArray",
+      "ctor": "Float64Array",
+      "array": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "_eulerAngles": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "_skewX": 0,
     "_skewY": 0,
     "_is3DNode": false,
@@ -100,24 +266,62 @@
     "__type__": "UIManager",
     "_name": "",
     "_objFlags": 0,
-    "node": {"__id__": 6},
+    "node": {
+      "__id__": 6
+    },
     "_enabled": true
   },
   {
     "__type__": "cc.Node",
     "_name": "GameWorld",
     "_objFlags": 0,
-    "_parent": {"__id__": 1},
+    "_parent": {
+      "__id__": 1
+    },
     "_children": [],
     "_active": true,
     "_components": [],
     "_prefab": null,
     "_opacity": 255,
-    "_color": {"__type__": "cc.Color", "r": 255, "g": 255, "b": 255, "a": 255},
-    "_contentSize": {"__type__": "cc.Size", "width": 0, "height": 0},
-    "_anchorPoint": {"__type__": "cc.Vec2", "x": 0.5, "y": 0.5},
-    "_trs": {"__type__": "TypedArray", "ctor": "Float64Array", "array": [0, 0, 0, 0, 0, 0, 1, 1, 1, 1]},
-    "_eulerAngles": {"__type__": "cc.Vec3", "x": 0, "y": 0, "z": 0},
+    "_color": {
+      "__type__": "cc.Color",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "a": 255
+    },
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 0,
+      "height": 0
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0.5,
+      "y": 0.5
+    },
+    "_trs": {
+      "__type__": "TypedArray",
+      "ctor": "Float64Array",
+      "array": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "_eulerAngles": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "_skewX": 0,
     "_skewY": 0,
     "_is3DNode": false,
@@ -128,21 +332,83 @@
     "__type__": "cc.Node",
     "_name": "DontDestroy",
     "_objFlags": 0,
-    "_parent": {"__id__": 1},
+    "_parent": {
+      "__id__": 1
+    },
     "_children": [],
     "_active": false,
     "_components": [],
     "_prefab": null,
     "_opacity": 255,
-    "_color": {"__type__": "cc.Color", "r": 255, "g": 255, "b": 255, "a": 255},
-    "_contentSize": {"__type__": "cc.Size", "width": 0, "height": 0},
-    "_anchorPoint": {"__type__": "cc.Vec2", "x": 0.5, "y": 0.5},
-    "_trs": {"__type__": "TypedArray", "ctor": "Float64Array", "array": [0, 0, 0, 0, 0, 0, 1, 1, 1, 1]},
-    "_eulerAngles": {"__type__": "cc.Vec3", "x": 0, "y": 0, "z": 0},
+    "_color": {
+      "__type__": "cc.Color",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "a": 255
+    },
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 0,
+      "height": 0
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0.5,
+      "y": 0.5
+    },
+    "_trs": {
+      "__type__": "TypedArray",
+      "ctor": "Float64Array",
+      "array": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "_eulerAngles": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "_skewX": 0,
     "_skewY": 0,
     "_is3DNode": false,
     "groupIndex": 0,
     "autoReleaseAssets": false
+  },
+  {
+    "__type__": "cc.Widget",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "alignMode": 1,
+    "_target": null,
+    "_alignFlags": 45,
+    "_left": 0,
+    "_right": 0,
+    "_top": 0,
+    "_bottom": 0,
+    "_verticalCenter": 0,
+    "_horizontalCenter": 0,
+    "_isAbsLeft": true,
+    "_isAbsRight": true,
+    "_isAbsTop": true,
+    "_isAbsBottom": true,
+    "_isAbsHorizontalCenter": true,
+    "_isAbsVerticalCenter": true,
+    "_originalWidth": 0,
+    "_originalHeight": 0
   }
 ]

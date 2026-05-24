@@ -1,3 +1,6 @@
 {
-    "engine": "cocos-creator-js@2.4.8"
+  "engine": "cocos-creator-js@2.4.8",
+  "version": "2.4.8",
+  "id": "72bc9534-8c3a-45f2-822b-637ac75df9d9",
+  "isNew": false
 }
