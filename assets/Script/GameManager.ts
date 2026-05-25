@@ -5,10 +5,11 @@ import EnemyGoomba from './EnemyGoomba';
 import QuestionBlock from './QuestionBlock';
 import {
     CANVAS_W, CANVAS_H, GROUND_Y, GROUND_HALF_H, LEVEL_WIDTH,
-    INITIAL_LIVES, INITIAL_TIMER, SCALE
+    INITIAL_LIVES, INITIAL_TIMER, SCALE, getWhiteFrame,
+    ANIM_SMALL_IDLE, ANIM_GOOMBA_WALK
 } from './Constants';
 
-const { ccclass } = cc._decorator;
+const { ccclass, property } = cc._decorator;
 
 interface LevelData {
     platforms: Array<{ x: number; y: number; w: number; h: number }>;
@@ -67,10 +68,13 @@ export default class GameManager extends cc.Component {
     private _uiMgr: UIManager = null;
     private _timerActive: boolean = false;
 
-    private _marioSmallAtlas: cc.SpriteAtlas = null;
-    private _marioBigAtlas: cc.SpriteAtlas = null;
-    private _goombaAtlas: cc.SpriteAtlas = null;
-    private _itemsAtlas: cc.SpriteAtlas = null;
+    @property(cc.SpriteAtlas) marioSmallAtlas: cc.SpriteAtlas = null;
+    @property(cc.SpriteAtlas) marioBigAtlas: cc.SpriteAtlas = null;
+    @property(cc.SpriteAtlas) goombaAtlas: cc.SpriteAtlas = null;
+    @property(cc.SpriteAtlas) itemsAtlas: cc.SpriteAtlas = null;
+
+    private _bgTex: cc.Texture2D = null;
+    private _flagTex: cc.Texture2D = null;
 
     onLoad() {
         GameManager.instance = this;
@@ -82,27 +86,50 @@ export default class GameManager extends cc.Component {
         const pm = cc.director.getPhysicsManager();
         pm.enabled = true;
         pm.gravity = cc.v2(0, -980);
+        (pm as any).enabledContactListener = true;
     }
 
     private _preloadAssets() {
         let loaded = 0;
-        const total = 4;
+        const total = 3;
         const check = () => { if (++loaded >= total) this._buildScene(); };
 
-        cc.resources.load('Texture/mario_small', cc.SpriteAtlas, (err, atlas) => {
-            if (!err) this._marioSmallAtlas = atlas as cc.SpriteAtlas;
+        cc.resources.load('Texture/menu_bg', cc.Texture2D, (err, tex: cc.Texture2D) => {
+            if (!err && tex) this._bgTex = tex;
             check();
         });
-        cc.resources.load('Texture/mario_big', cc.SpriteAtlas, (err, atlas) => {
-            if (!err) this._marioBigAtlas = atlas as cc.SpriteAtlas;
+        cc.resources.load('Texture/flag', cc.Texture2D, (err, tex: cc.Texture2D) => {
+            if (!err && tex) this._flagTex = tex;
             check();
         });
-        cc.resources.load('Texture/Goomba', cc.SpriteAtlas, (err, atlas) => {
-            if (!err) this._goombaAtlas = atlas as cc.SpriteAtlas;
-            check();
-        });
-        cc.resources.load('Texture/items', cc.SpriteAtlas, (err, atlas) => {
-            if (!err) this._itemsAtlas = atlas as cc.SpriteAtlas;
+        cc.resources.loadDir('Texture', cc.SpriteAtlas, (err, atlases: cc.SpriteAtlas[]) => {
+            if (err) console.warn('[GM] atlas loadDir err:', err);
+            if (atlases) {
+                for (const a of atlases) {
+                    const n = a.name;
+                    if (n === 'mario_small') this.marioSmallAtlas = a;
+                    else if (n === 'mario_big') this.marioBigAtlas = a;
+                    else if (n === 'Goomba') this.goombaAtlas = a;
+                    else if (n === 'items') this.itemsAtlas = a;
+                }
+            }
+            console.log('[GM] atlases — mario_small:', !!this.marioSmallAtlas,
+                'mario_big:', !!this.marioBigAtlas,
+                'Goomba:', !!this.goombaAtlas,
+                'items:', !!this.itemsAtlas);
+            if (this.goombaAtlas) {
+                const f1 = this.goombaAtlas.getSpriteFrame('Goomba_0.png');
+                const f2 = this.goombaAtlas.getSpriteFrame('Goomba_0');
+                const all = this.goombaAtlas.getSpriteFrames();
+                console.log('[GM] Goomba "Goomba_0.png":', !!f1, '"Goomba_0":', !!f2,
+                    'total frames:', all ? all.length : 0,
+                    'first name:', all && all[0] ? all[0].name : 'none');
+            }
+            if (this.itemsAtlas) {
+                const f1 = this.itemsAtlas.getSpriteFrame('items_10.png');
+                const f2 = this.itemsAtlas.getSpriteFrame('items_10');
+                console.log('[GM] items "items_10.png":', !!f1, '"items_10":', !!f2);
+            }
             check();
         });
     }
@@ -113,8 +140,8 @@ export default class GameManager extends cc.Component {
             this._gameWorld = new cc.Node('GameWorld');
             cc.find('Canvas').addChild(this._gameWorld);
         }
-        this._uiMgr = cc.find('Canvas/UIManager').getComponent(UIManager) ||
-            this.node.parent.getComponent(UIManager);
+        const uiNode = cc.find('Canvas/UIManager');
+        this._uiMgr = uiNode ? uiNode.getComponent(UIManager) : this.node.parent.getComponent(UIManager);
 
         this._createBackground();
         this._createGround();
@@ -122,7 +149,7 @@ export default class GameManager extends cc.Component {
         this._createQuestionBlocks(LEVEL1.qblocks);
         this._createEnemies(LEVEL1.enemies);
         this._createFlag(LEVEL1.flagX);
-        this._createPlayer(-350, GROUND_Y + 50);
+        this._createPlayer(-350, GROUND_Y);
         this._createDeathZone();
 
         if (this._uiMgr) {
@@ -136,15 +163,38 @@ export default class GameManager extends cc.Component {
     }
 
     private _createBackground() {
-        const bg = new cc.Node('Background');
-        bg.color = cc.color(92, 148, 252);
-        bg.width = LEVEL_WIDTH + CANVAS_W;
-        bg.height = CANVAS_H + 200;
-        bg.x = LEVEL_WIDTH / 2 - CANVAS_W / 2;
-        bg.y = 0;
-        const sp = bg.addComponent(cc.Sprite);
-        sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
-        this._gameWorld.addChild(bg, -10);
+        const totalW = LEVEL_WIDTH + CANVAS_W;
+
+        // Sky base layer
+        const sky = new cc.Node('Sky');
+        sky.color = cc.color(92, 148, 252);
+        sky.width = totalW;
+        sky.height = CANVAS_H + 200;
+        sky.x = totalW / 2 - CANVAS_W / 2;
+        sky.y = 0;
+        const skySp = sky.addComponent(cc.Sprite);
+        skySp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+        skySp.spriteFrame = getWhiteFrame();
+        this._gameWorld.addChild(sky, -20);
+
+        // Tile menu_bg.png across the level
+        if (this._bgTex) {
+            const tileW = this._bgTex.width * SCALE;
+            const tileH = this._bgTex.height * SCALE;
+            let posX = -CANVAS_W / 2;
+            while (posX < totalW - CANVAS_W / 2) {
+                const bg = new cc.Node('BgTile');
+                bg.width = tileW;
+                bg.height = tileH;
+                bg.x = posX + tileW / 2;
+                bg.y = GROUND_Y + tileH / 2;
+                const sp = bg.addComponent(cc.Sprite);
+                sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+                sp.spriteFrame = new cc.SpriteFrame(this._bgTex);
+                this._gameWorld.addChild(bg, -10);
+                posX += tileW;
+            }
+        }
     }
 
     private _createGround() {
@@ -174,11 +224,11 @@ export default class GameManager extends cc.Component {
             const node = this._makeStaticBox('QuestionBlock', b.x, b.y, size, size);
             node.color = cc.color(255, 200, 0);
             const qb = node.addComponent(QuestionBlock);
-            if (this._itemsAtlas) {
+            if (this.itemsAtlas) {
                 const sp = node.getComponent(cc.Sprite) || node.addComponent(cc.Sprite);
-                const frame = this._itemsAtlas.getSpriteFrame('items_10.png');
+                const frame = this.itemsAtlas.getSpriteFrame('items_10');
                 if (frame) sp.spriteFrame = frame;
-                qb.itemsAtlas = this._itemsAtlas;
+                qb.itemsAtlas = this.itemsAtlas;
             }
             this._gameWorld.addChild(node);
         }
@@ -191,10 +241,14 @@ export default class GameManager extends cc.Component {
             node.setPosition(e.x, e.y + h / 2);
             node.width = w;
             node.height = h;
-            node.color = cc.color(180, 120, 60);
-
             const sp = node.addComponent(cc.Sprite);
             sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+            if (this.goombaAtlas) {
+                const frame = this.goombaAtlas.getSpriteFrame(ANIM_GOOMBA_WALK[0]);
+                sp.spriteFrame = frame || getWhiteFrame();
+            } else {
+                sp.spriteFrame = getWhiteFrame();
+            }
 
             const rb = node.addComponent(cc.RigidBody);
             rb.type = cc.RigidBodyType.Dynamic;
@@ -211,36 +265,36 @@ export default class GameManager extends cc.Component {
             node.group = 'enemy';
 
             const enemy = node.addComponent(EnemyGoomba);
-            enemy.atlas = this._goombaAtlas;
+            enemy.atlas = this.goombaAtlas;
 
             this._gameWorld.addChild(node);
         }
     }
 
     private _createFlag(x: number) {
+        const flagH = this._flagTex ? this._flagTex.height * 2 : 240;
+        const flagW = this._flagTex ? this._flagTex.width  * 2 : 16;
+
         const pole = new cc.Node('FlagPole');
-        pole.setPosition(x, GROUND_Y - 60);
-        pole.width = 8;
-        pole.height = 240;
-        pole.color = cc.color(200, 200, 200);
+        pole.setPosition(x, GROUND_Y + flagH / 2);
+        pole.width  = flagW;
+        pole.height = flagH;
+
         const sp = pole.addComponent(cc.Sprite);
         sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+        if (this._flagTex) {
+            sp.spriteFrame = new cc.SpriteFrame(this._flagTex);
+        } else {
+            sp.spriteFrame = getWhiteFrame();
+            pole.color = cc.color(200, 200, 200);
+        }
 
         const trigger = pole.addComponent(cc.PhysicsBoxCollider);
-        trigger.size = cc.size(40, 240);
+        trigger.size = cc.size(Math.max(flagW, 40), flagH);
         trigger.sensor = true;
         pole.group = 'item';
 
         this._gameWorld.addChild(pole);
-
-        const flag = new cc.Node('Flag');
-        flag.setPosition(x + 15, GROUND_Y + 110);
-        flag.width = 32;
-        flag.height = 24;
-        flag.color = cc.color(0, 200, 0);
-        const fsp = flag.addComponent(cc.Sprite);
-        fsp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
-        this._gameWorld.addChild(flag);
     }
 
     private _createPlayer(x: number, y: number) {
@@ -252,6 +306,12 @@ export default class GameManager extends cc.Component {
 
         const sp = this._player.addComponent(cc.Sprite);
         sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+        if (this.marioSmallAtlas) {
+            const frame = this.marioSmallAtlas.getSpriteFrame(ANIM_SMALL_IDLE[0]);
+            sp.spriteFrame = frame || getWhiteFrame();
+        } else {
+            sp.spriteFrame = getWhiteFrame();
+        }
 
         const rb = this._player.addComponent(cc.RigidBody);
         rb.type = cc.RigidBodyType.Dynamic;
@@ -269,8 +329,8 @@ export default class GameManager extends cc.Component {
         this._player.group = 'player';
 
         const pc = this._player.addComponent(PlayerController);
-        pc.smallAtlas = this._marioSmallAtlas;
-        pc.bigAtlas = this._marioBigAtlas;
+        pc.smallAtlas = this.marioSmallAtlas;
+        pc.bigAtlas = this.marioBigAtlas;
         pc.gameWorld = this._gameWorld;
 
         this._gameWorld.addChild(this._player);
@@ -298,6 +358,7 @@ export default class GameManager extends cc.Component {
 
         const sp = node.addComponent(cc.Sprite);
         sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+        sp.spriteFrame = getWhiteFrame();
 
         const rb = node.addComponent(cc.RigidBody);
         rb.type = cc.RigidBodyType.Static;
@@ -345,7 +406,7 @@ export default class GameManager extends cc.Component {
     private _respawnPlayer() {
         if (!this._player || !this._player.isValid) return;
         const pc = this._player.getComponent(PlayerController);
-        if (pc) pc.respawn(-350, GROUND_Y + 50);
+        if (pc) pc.respawn(-350, GROUND_Y);
         AudioManager.instance && AudioManager.instance.playBGM('Audio/bgm_1');
         this.timeLeft = INITIAL_TIMER;
         this._timerActive = true;

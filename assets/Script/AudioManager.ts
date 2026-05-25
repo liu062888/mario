@@ -1,4 +1,4 @@
-const { ccclass, property } = cc._decorator;
+const { ccclass } = cc._decorator;
 
 @ccclass
 export default class AudioManager extends cc.Component {
@@ -7,7 +7,6 @@ export default class AudioManager extends cc.Component {
     public static get instance(): AudioManager { return AudioManager._instance; }
 
     private _bgmId: number = -1;
-    private _atlasLoaded: boolean = false;
 
     onLoad() {
         if (AudioManager._instance && AudioManager._instance !== this) {
@@ -15,7 +14,6 @@ export default class AudioManager extends cc.Component {
             return;
         }
         AudioManager._instance = this;
-        cc.game.addPersistRootNode(this.node);
     }
 
     onDestroy() {

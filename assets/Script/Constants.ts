@@ -1,3 +1,13 @@
+let _whiteFrame: cc.SpriteFrame = null;
+export function getWhiteFrame(): cc.SpriteFrame {
+    if (!_whiteFrame) {
+        const tex = new cc.Texture2D();
+        tex.initWithData(new Uint8Array([255, 255, 255, 255]), cc.Texture2D.PixelFormat.RGBA8888, 1, 1);
+        _whiteFrame = new cc.SpriteFrame(tex);
+    }
+    return _whiteFrame;
+}
+
 // Game-wide constants
 export const GRAVITY = -980;
 export const PLAYER_SPEED = 220;
@@ -31,21 +41,21 @@ export const CANVAS_H = 640;
 export const GROUND_Y = -240;   // top-of-ground y in world space
 export const GROUND_HALF_H = 48;
 
-// Animation frame names
-export const ANIM_SMALL_IDLE   = ['mario_small_0.png'];
-export const ANIM_SMALL_WALK   = ['mario_small_1.png', 'mario_small_2.png', 'mario_small_3.png'];
-export const ANIM_SMALL_JUMP   = ['mario_small_5.png'];
-export const ANIM_SMALL_DEAD   = ['mario_small_6.png'];
+// Animation frame names (no .png extension — loadDir strips it)
+export const ANIM_SMALL_IDLE   = ['mario_small_0'];
+export const ANIM_SMALL_WALK   = ['mario_small_1', 'mario_small_2', 'mario_small_3'];
+export const ANIM_SMALL_JUMP   = ['mario_small_5'];
+export const ANIM_SMALL_DEAD   = ['mario_small_6'];
 
-export const ANIM_BIG_IDLE     = ['mario_big_0.png'];
-export const ANIM_BIG_WALK     = ['mario_big_1.png', 'mario_big_2.png', 'mario_big_3.png'];
-export const ANIM_BIG_JUMP     = ['mario_big_5.png'];
-export const ANIM_BIG_DEAD     = ['mario_big_6.png'];
+export const ANIM_BIG_IDLE     = ['mario_big_0'];
+export const ANIM_BIG_WALK     = ['mario_big_1', 'mario_big_2', 'mario_big_3'];
+export const ANIM_BIG_JUMP     = ['mario_big_5'];
+export const ANIM_BIG_DEAD     = ['mario_big_6'];
 
-export const ANIM_GOOMBA_WALK  = ['Goomba_0.png', 'Goomba_1.png'];
-export const ANIM_GOOMBA_DEAD  = ['Goomba_2.png'];
+export const ANIM_GOOMBA_WALK  = ['Goomba_0', 'Goomba_1'];
+export const ANIM_GOOMBA_DEAD  = ['Goomba_2'];
 
-export const ANIM_MUSHROOM     = ['items_0.png'];
-export const ANIM_QBLOCK_ACTIVE  = ['items_10.png', 'items_11.png', 'items_12.png'];
-export const ANIM_QBLOCK_USED    = ['items_10.png'];
+export const ANIM_MUSHROOM     = ['items_0'];
+export const ANIM_QBLOCK_ACTIVE  = ['items_10', 'items_11', 'items_12'];
+export const ANIM_QBLOCK_USED    = ['items_10'];
 

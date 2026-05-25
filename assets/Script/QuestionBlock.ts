@@ -1,7 +1,7 @@
 import AudioManager from './AudioManager';
 import GameManager from './GameManager';
 import Mushroom from './Mushroom';
-import { ANIM_QBLOCK_ACTIVE, ANIM_QBLOCK_USED, ANIM_MUSHROOM, SCALE } from './Constants';
+import { ANIM_QBLOCK_ACTIVE, ANIM_QBLOCK_USED, ANIM_MUSHROOM, SCALE, getWhiteFrame } from './Constants';
 
 const { ccclass, property } = cc._decorator;
 
@@ -76,6 +76,7 @@ export default class QuestionBlock extends cc.Component {
 
         const sp = mushNode.addComponent(cc.Sprite);
         sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+        sp.spriteFrame = getWhiteFrame();
         if (this.itemsAtlas) {
             const frame = this.itemsAtlas.getSpriteFrame(ANIM_MUSHROOM[0]);
             if (frame) sp.spriteFrame = frame;

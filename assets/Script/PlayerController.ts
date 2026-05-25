@@ -30,6 +30,7 @@ export default class PlayerController extends cc.Component {
     private _animTimer: number = 0;
     private _currentFrames: string[] = ANIM_SMALL_IDLE;
     private _jumpPressed: boolean = false;
+    private _jumpCooldown: number = 0;
 
     // Key state tracking
     private _keys: { [code: number]: boolean } = {};
@@ -43,6 +44,19 @@ export default class PlayerController extends cc.Component {
         cc.systemEvent.on(cc.SystemEvent.EventType.KEY_UP, this._onKeyUp, this);
     }
 
+    start() {
+        this._applyFrame();
+    }
+
+    // Fallback: use velocity when onBeginContact is not firing
+    private _isOnGround(): boolean {
+        if (this._groundContacts > 0) return true;
+        if (this._jumpCooldown > 0) return false;
+        if (!this._rb) return false;
+        const vy = this._rb.linearVelocity.y;
+        return vy >= -30 && vy <= 5;
+    }
+
     onDestroy() {
         cc.systemEvent.off(cc.SystemEvent.EventType.KEY_DOWN, this._onKeyDown, this);
         cc.systemEvent.off(cc.SystemEvent.EventType.KEY_UP, this._onKeyUp, this);
@@ -52,7 +66,7 @@ export default class PlayerController extends cc.Component {
         this._keys[event.keyCode] = true;
         const k = event.keyCode;
         const isJump = k === cc.macro.KEY.space || k === cc.macro.KEY.up || k === cc.macro.KEY.w;
-        if (isJump && this._groundContacts > 0 && !this._isDead && !this._jumpPressed) {
+        if (isJump && this._isOnGround() && !this._isDead && !this._jumpPressed) {
             this._doJump();
         }
     }
@@ -72,6 +86,7 @@ export default class PlayerController extends cc.Component {
     private _doJump() {
         if (!this._rb) return;
         this._jumpPressed = true;
+        this._jumpCooldown = 0.4;
         const vx = this._rb.linearVelocity.x;
         this._rb.linearVelocity = cc.v2(vx, PLAYER_JUMP_FORCE);
         this._groundContacts = 0;
@@ -80,6 +95,7 @@ export default class PlayerController extends cc.Component {
     }
 
     update(dt: number) {
+        if (this._jumpCooldown > 0) this._jumpCooldown -= dt;
         if (this._isDead) {
             this._updateCamera();
             return;
@@ -110,13 +126,13 @@ export default class PlayerController extends cc.Component {
             vx = -PLAYER_SPEED;
             if (this._facingRight) {
                 this._facingRight = false;
-                this.node.scaleX = -SCALE;
+                this.node.scaleX = -1;
             }
         } else if (rightDown) {
             vx = PLAYER_SPEED;
             if (!this._facingRight) {
                 this._facingRight = true;
-                this.node.scaleX = SCALE;
+                this.node.scaleX = 1;
             }
         } else {
             vx *= 0.8;
@@ -126,7 +142,7 @@ export default class PlayerController extends cc.Component {
         this._rb.linearVelocity = cc.v2(vx, this._rb.linearVelocity.y);
 
         // Update walk/idle state (don't override JUMP while in air)
-        if (this._groundContacts > 0 && this._state !== PlayerState.DEAD) {
+        if (this._isOnGround() && this._state !== PlayerState.DEAD) {
             if (Math.abs(vx) > 5) this._setState(PlayerState.WALK);
             else this._setState(PlayerState.IDLE);
         }
@@ -312,9 +328,9 @@ export default class PlayerController extends cc.Component {
         if (!this.gameWorld) return;
         const px = this.node.x;
         const halfW = CANVAS_W / 2;
-        let worldX = -(px - halfW * 0.4);
-        worldX = Math.min(0, Math.max(worldX, -(LEVEL_WIDTH - CANVAS_W)));
-        this.gameWorld.x = worldX;
+        let targetX = -(px - halfW * 0.4);
+        targetX = Math.min(0, Math.max(targetX, -(LEVEL_WIDTH - CANVAS_W)));
+        this.gameWorld.x += (targetX - this.gameWorld.x) * 0.15;
     }
 }
 
