@@ -156,8 +156,9 @@ export default class PlayerController extends cc.Component {
             const halfH = (playerH + child.height) / 2 + 16;
             if (dx >= halfW || dy >= halfH) continue;
 
-            // Stomp: Mario center above Goomba center while falling or near ground
-            const isStomp = this._trackY > child.y + 5
+            // Stomp: Mario feet above Goomba center while falling (fixes false stomp for BIG Mario)
+            const marioFeetY = this._trackY - playerH / 2;
+            const isStomp = marioFeetY > child.y + 5
                          && this._rb && this._rb.linearVelocity.y <= 5;
 
             if (isStomp) {
