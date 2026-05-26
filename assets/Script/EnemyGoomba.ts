@@ -6,13 +6,14 @@ const { ccclass, property } = cc._decorator;
 export default class EnemyGoomba extends cc.Component {
 
     @property(cc.SpriteAtlas) atlas: cc.SpriteAtlas = null;
+    @property patrolRange: number = 200;
 
     private _rb: cc.RigidBody = null;
     private _sprite: cc.Sprite = null;
     private _physNode: cc.Node = null;
-    private _playerNode: cc.Node = null;
     private _speed: number = 60;
     private _dir: number = -1;
+    private _initX: number = 0;
     isDead: boolean = false;
     private _animFrame: number = 0;
     private _animTimer: number = 0;
@@ -37,9 +38,7 @@ export default class EnemyGoomba extends cc.Component {
     }
 
     start() {
-        let gw: cc.Node = this.node.parent;
-        while (gw && gw.name.trim() !== 'GameWorld') gw = gw.parent;
-        if (gw) this._playerNode = gw.getChildByName('Player');
+        this._initX = this._physNode ? this._physNode.x : this.node.x;
     }
 
     private _applyFrame(name: string) {
@@ -52,8 +51,12 @@ export default class EnemyGoomba extends cc.Component {
     update(dt: number) {
         if (this.isDead) return;
 
-        if (this._playerNode && this._physNode) {
-            this._dir = this._playerNode.x > this._physNode.x ? 1 : -1;
+        // Patrol: flip direction at patrol boundary or when hitting a wall
+        const curX = this._physNode ? this._physNode.x : this.node.x;
+        if (curX <= this._initX - this.patrolRange) this._dir = 1;
+        else if (curX >= this._initX + this.patrolRange) this._dir = -1;
+
+        if (this._physNode) {
             this._physNode.scaleX = this._dir > 0
                 ? Math.abs(this._physNode.scaleX)
                 : -Math.abs(this._physNode.scaleX);
