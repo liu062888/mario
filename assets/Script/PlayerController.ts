@@ -1,11 +1,12 @@
 import AudioManager from './AudioManager';
 import GameManager from './GameManager';
+import EnemyGoomba from './EnemyGoomba';
+import QuestionBlock from './QuestionBlock';
 import {
     PLAYER_SPEED, PLAYER_JUMP_FORCE, SCALE, CANVAS_W, LEVEL_WIDTH,
     MarioSize, PlayerState,
     ANIM_SMALL_IDLE, ANIM_SMALL_WALK, ANIM_SMALL_JUMP, ANIM_SMALL_DEAD,
     ANIM_BIG_IDLE, ANIM_BIG_WALK, ANIM_BIG_JUMP, ANIM_BIG_DEAD,
-    GROUND_Y
 } from './Constants';
 
 const { ccclass, property } = cc._decorator;
@@ -31,20 +32,48 @@ export default class PlayerController extends cc.Component {
     private _currentFrames: string[] = ANIM_SMALL_IDLE;
     private _jumpPressed: boolean = false;
     private _jumpCooldown: number = 0;
+    private _blockHitCooldown: number = 0;
+    private _trackX: number = 0;
+    private _trackY: number = 0;
+    private _cameraX: number = 0;
+    private _uiNode: cc.Node = null;
 
     // Key state tracking
     private _keys: { [code: number]: boolean } = {};
 
     onLoad() {
-        this._rb = this.getComponent(cc.RigidBody);
+        this._rb = this.getComponent(cc.RigidBody)
+            || (this.node.parent && this.node.parent.getComponent(cc.RigidBody));
         this._sprite = this.getComponent(cc.Sprite);
-        this._col = this.getComponent(cc.PhysicsBoxCollider);
+        this._col = this.getComponent(cc.PhysicsBoxCollider)
+            || (this.node.parent && this.node.parent.getComponent(cc.PhysicsBoxCollider));
+        const physNode = this._col ? this._col.node : this.node;
+        physNode.group = 'player';
 
         cc.systemEvent.on(cc.SystemEvent.EventType.KEY_DOWN, this._onKeyDown, this);
         cc.systemEvent.on(cc.SystemEvent.EventType.KEY_UP, this._onKeyUp, this);
     }
 
     start() {
+        if (!this.gameWorld) {
+            let p = this.node.parent;
+            while (p) {
+                if (p.name.trim() === 'GameWorld') { this.gameWorld = p; break; }
+                p = p.parent;
+            }
+        }
+        // Sum parent chain for initial world position (safe: scaleX=1 at start, nothing moved yet)
+        let wx = 0, wy = 0;
+        let n: cc.Node = this.node;
+        while (n && n.name !== 'Canvas') { wx += n.x; wy += n.y; n = n.parent; }
+        this._trackX = wx;
+        this._trackY = wy;
+
+        this._cameraX = 0;
+        this._uiNode = cc.find('Canvas/UIManager');
+        const camera = cc.Camera.main;
+        if (camera) camera.node.x = this._cameraX;
+        if (this._uiNode) this._uiNode.x = this._cameraX;
         this._applyFrame();
     }
 
@@ -96,22 +125,125 @@ export default class PlayerController extends cc.Component {
 
     update(dt: number) {
         if (this._jumpCooldown > 0) this._jumpCooldown -= dt;
-        if (this._isDead) {
-            this._updateCamera();
-            return;
-        }
+        if (this._blockHitCooldown > 0) this._blockHitCooldown -= dt;
+        if (this._isDead) return;
         this._handleMovement();
         this._updateAnimation(dt);
-        this._updateCamera();
+        this._checkGoombaCollisions();
+        this._checkBlockCollisions();
+        this._checkMushroomCollisions();
+    }
 
-        // Fall-death: below world
-        if (this.node.y < GROUND_Y - 300) {
-            this._die();
+    private _checkGoombaCollisions() {
+        if (this._isInvincible || !this.gameWorld) return;
+        for (const child of this.gameWorld.children) {
+            if (child.name !== 'Goomba' || !child.active) continue;
+            const enemy = child.getComponent(EnemyGoomba)
+                       || (child.children[0] && child.children[0].getComponent(EnemyGoomba));
+            if (!enemy || enemy.isDead) continue;
+
+            const playerH = this._size === MarioSize.BIG ? 26 * SCALE : 16 * SCALE;
+            const dx = Math.abs(this._trackX - child.x);
+            const dy = Math.abs(this._trackY - child.y);
+            const halfW = (this.node.width + child.width) / 2 - 4;
+            const halfH = (playerH + child.height) / 2 + 16;
+            if (dx >= halfW || dy >= halfH) continue;
+
+            // Stomp: Mario center above Goomba center while falling or near ground
+            const isStomp = this._trackY > child.y + 5
+                         && this._rb && this._rb.linearVelocity.y <= 5;
+
+            if (isStomp) {
+                enemy.die();
+                this._rb.linearVelocity = cc.v2(this._rb.linearVelocity.x, PLAYER_JUMP_FORCE * 0.65);
+                this._setState(PlayerState.JUMP);
+                GameManager.instance && GameManager.instance.addScore(100);
+                AudioManager.instance && AudioManager.instance.playSFX('Audio/stomp');
+            } else {
+                this._getHurt();
+            }
+            break;
+        }
+    }
+
+    private _checkBlockCollisions() {
+        if (!this.gameWorld || !this._rb || this._blockHitCooldown > 0) return;
+        if (this._rb.linearVelocity.y <= 0) return;
+        const playerH = this._size === MarioSize.BIG ? 26 * SCALE : 16 * SCALE;
+        const playerTop = this._trackY + playerH / 2;
+        for (const child of this.gameWorld.children) {
+            if (child.name !== 'QuestionBlock' || !child.active) continue;
+            const qb = child.getComponent(QuestionBlock);
+            if (!qb) continue;
+            const blockBottomY = child.y - child.height / 2;
+            if (Math.abs(playerTop - blockBottomY) > 12) continue;
+            const dx = Math.abs(this._trackX - child.x);
+            if (dx >= (this.node.width + child.width) / 2 - 4) continue;
+            qb.activate();
+            this._blockHitCooldown = 0.5;
+            break;
+        }
+    }
+
+    private _checkMushroomCollisions() {
+        if (!this.gameWorld) return;
+        const playerH = this._size === MarioSize.BIG ? 26 * SCALE : 16 * SCALE;
+        for (const child of this.gameWorld.children) {
+            if (child.name !== 'Mushroom' || !child.active) continue;
+            const dx = Math.abs(this._trackX - child.x);
+            const dy = Math.abs(this._trackY - child.y);
+            if (dx < (this.node.width + child.width) / 2 - 2
+             && dy < (playerH + child.height) / 2 - 2) {
+                this._collectMushroom();
+                child.destroy();
+                break;
+            }
+        }
+    }
+
+    lateUpdate(_dt: number) {
+        // lateUpdate runs after Box2D step — node.x is the current-frame physics position
+        let wx = 0, wy = 0;
+        let n: cc.Node = this.node;
+        while (n && n.name !== 'Canvas') { wx += n.x; wy += n.y; n = n.parent; }
+        this._trackX = wx;
+        this._trackY = wy;
+
+        const camera = cc.Camera.main;
+        if (camera) {
+            const marioScreenX = wx - (this._cameraX - CANVAS_W / 2);
+            if (marioScreenX > CANVAS_W * 2 / 3) {
+                this._cameraX = wx - CANVAS_W * 2 / 3 + CANVAS_W / 2;
+            } else if (marioScreenX < 0) {
+                this._cameraX = wx + CANVAS_W / 2;
+            }
+            this._cameraX = Math.max(0, Math.min(this._cameraX, LEVEL_WIDTH - CANVAS_W / 2));
+            camera.node.x = this._cameraX;
+            if (this._uiNode) this._uiNode.x = this._cameraX;
         }
 
-        // Off left edge
-        if (this.node.x < -CANVAS_W) {
-            this._die();
+        if (this._isDead) return;
+
+        // Fall-death
+        if (this._trackY < -480) { this._die(); return; }
+
+        // Left wall — hard clamp at world x = -CANVAS_W/2 (-480)
+        const LEFT_BOUND = -CANVAS_W / 2;
+        if (this._trackX < LEFT_BOUND) {
+            this.node.x -= (this._trackX - LEFT_BOUND);
+            this._trackX = LEFT_BOUND;
+            if (this._rb && this._rb.linearVelocity.x < 0) {
+                this._rb.linearVelocity = cc.v2(0, this._rb.linearVelocity.y);
+            }
+        }
+
+        // Right wall — hard clamp at world x = LEVEL_WIDTH
+        if (this._trackX > LEVEL_WIDTH) {
+            this.node.x -= (this._trackX - LEVEL_WIDTH);
+            this._trackX = LEVEL_WIDTH;
+            if (this._rb && this._rb.linearVelocity.x > 0) {
+                this._rb.linearVelocity = cc.v2(0, this._rb.linearVelocity.y);
+            }
         }
     }
 
@@ -135,8 +267,8 @@ export default class PlayerController extends cc.Component {
                 this.node.scaleX = 1;
             }
         } else {
-            vx *= 0.8;
-            if (Math.abs(vx) < 3) vx = 0;
+            vx *= 0.9;
+            if (Math.abs(vx) < 10) vx = 0;
         }
 
         this._rb.linearVelocity = cc.v2(vx, this._rb.linearVelocity.y);
@@ -161,7 +293,7 @@ export default class PlayerController extends cc.Component {
         // Ground detection: other object's surface is below player (normal points down from self's perspective = up from world)
         if (ny > 0.5) {
             const name = otherNode.name;
-            if (name === 'Ground' || name.startsWith('Platform') || name === 'QuestionBlock') {
+            if (name === 'Ground' || name === 'GroundPhysics' || name.startsWith('Platform') || name === 'QuestionBlock') {
                 this._groundContacts++;
                 if (this._state === PlayerState.JUMP) this._setState(PlayerState.IDLE);
             }
@@ -176,18 +308,24 @@ export default class PlayerController extends cc.Component {
             otherNode.destroy();
         }
 
-        if (otherNode.name === 'FlagPole') {
-            GameManager.instance && GameManager.instance.onLevelClear();
-        }
 
         if (otherNode.name === 'DeathZone') {
             this._die();
         }
     }
 
+    onPreSolve(contact: cc.PhysicsContact, _selfCol: cc.PhysicsCollider, otherCol: cc.PhysicsCollider) {
+        if (!otherCol.node.name.startsWith('Platform')) return;
+        const platTopY = otherCol.node.y + otherCol.node.height / 2;
+        const playerFeetY = this._trackY - this.node.height / 2;
+        if (playerFeetY < platTopY - 4) {
+            contact.disabled = true;
+        }
+    }
+
     onEndContact(_contact: cc.PhysicsContact, _selfCol: cc.PhysicsCollider, otherCol: cc.PhysicsCollider) {
         const name = otherCol.node.name;
-        if (name === 'Ground' || name.startsWith('Platform') || name === 'QuestionBlock') {
+        if (name === 'Ground' || name === 'GroundPhysics' || name.startsWith('Platform') || name === 'QuestionBlock') {
             this._groundContacts = Math.max(0, this._groundContacts - 1);
             if (this._groundContacts === 0 && this._state !== PlayerState.JUMP && this._state !== PlayerState.DEAD) {
                 this._setState(PlayerState.JUMP);
@@ -195,15 +333,14 @@ export default class PlayerController extends cc.Component {
         }
     }
 
-    private _handleEnemyContact(enemyNode: cc.Node, _ny: number) {
+    private _handleEnemyContact(enemyNode: cc.Node, ny: number) {
         if (this._isInvincible) return;
-        const playerBottom = this.node.y - this.node.height / 2;
-        const enemyCenterY = enemyNode.y;
-
-        if (playerBottom >= enemyCenterY - 8 && this._rb.linearVelocity.y <= 10) {
-            // Stomp!
-            const enemy = enemyNode.getComponent('EnemyGoomba') as any;
-            if (enemy && typeof enemy.die === 'function') enemy.die();
+        // Stomp: contact normal points upward AND player falling/stationary
+        const isStomp = ny > 0.4 && this._rb && this._rb.linearVelocity.y <= 5;
+        if (isStomp) {
+            const enemy = enemyNode.getComponent(EnemyGoomba)
+                       || (enemyNode.children[0] && enemyNode.children[0].getComponent(EnemyGoomba));
+            if (enemy) enemy.die();
             this._rb.linearVelocity = cc.v2(this._rb.linearVelocity.x, PLAYER_JUMP_FORCE * 0.65);
             this._setState(PlayerState.JUMP);
             GameManager.instance && GameManager.instance.addScore(100);
@@ -224,6 +361,9 @@ export default class PlayerController extends cc.Component {
 
     private _shrink() {
         this._size = MarioSize.SMALL;
+        this._currentFrames = ANIM_SMALL_IDLE;
+        this._animFrame = 0;
+        this._applyFrame();
         this._isInvincible = true;
         this.node.height = 16 * SCALE;
         if (this._col) {
@@ -261,6 +401,9 @@ export default class PlayerController extends cc.Component {
     private _collectMushroom() {
         if (this._size === MarioSize.BIG) return;
         this._size = MarioSize.BIG;
+        this._currentFrames = ANIM_BIG_IDLE;
+        this._animFrame = 0;
+        this._applyFrame();
         const bigH = 26 * SCALE;
         this.node.height = bigH;
         if (this._col) {
@@ -287,8 +430,14 @@ export default class PlayerController extends cc.Component {
         if (this._rb) {
             this._rb.linearVelocity = cc.v2(0, 0);
         }
-        this.node.setPosition(x, y + this.node.height / 2);
+        const newY = y + this.node.height / 2;
+        this.node.setPosition(x, newY);
+        this._trackX = x;
+        this._trackY = newY;
         this._setState(PlayerState.IDLE);
+        this._cameraX = 0;
+        const camera = cc.Camera.main;
+        if (camera) camera.node.x = this._cameraX;
     }
 
     private _setState(s: PlayerState) {
@@ -320,17 +469,11 @@ export default class PlayerController extends cc.Component {
         if (!this._sprite) return;
         const atlas = this._size === MarioSize.BIG ? this.bigAtlas : this.smallAtlas;
         if (!atlas) return;
-        const frame = atlas.getSpriteFrame(this._currentFrames[this._animFrame]);
+        const name = this._currentFrames[this._animFrame];
+        const frame = atlas.getSpriteFrame(name)
+                   ?? atlas.getSpriteFrame(name + '.png');
         if (frame) this._sprite.spriteFrame = frame;
     }
 
-    private _updateCamera() {
-        if (!this.gameWorld) return;
-        const px = this.node.x;
-        const halfW = CANVAS_W / 2;
-        let targetX = -(px - halfW * 0.4);
-        targetX = Math.min(0, Math.max(targetX, -(LEVEL_WIDTH - CANVAS_W)));
-        this.gameWorld.x += (targetX - this.gameWorld.x) * 0.15;
-    }
 }
 

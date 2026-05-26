@@ -11,6 +11,7 @@ export default class AudioManager extends cc.Component {
     onLoad() {
         if (AudioManager._instance && AudioManager._instance !== this) {
             this.node.destroy();
+            
             return;
         }
         AudioManager._instance = this;

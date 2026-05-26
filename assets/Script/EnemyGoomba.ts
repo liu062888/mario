@@ -9,43 +9,77 @@ export default class EnemyGoomba extends cc.Component {
 
     private _rb: cc.RigidBody = null;
     private _sprite: cc.Sprite = null;
-    private _speed: number = 100;
-    private _dir: number = -1; // -1 = left, 1 = right
-    private _isDead: boolean = false;
+    private _physNode: cc.Node = null;
+    private _playerNode: cc.Node = null;
+    private _speed: number = 60;
+    private _dir: number = -1;
+    isDead: boolean = false;
     private _animFrame: number = 0;
     private _animTimer: number = 0;
     private _animFPS: number = 6;
 
     onLoad() {
-        this._rb = this.getComponent(cc.RigidBody);
-        this._sprite = this.getComponent(cc.Sprite);
-        if (this._sprite && this.atlas) {
-            const frame = this.atlas.getSpriteFrame(ANIM_GOOMBA_WALK[0]);
-            if (frame) this._sprite.spriteFrame = frame;
-            this._sprite.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+        const p = this.node.parent;
+        this._rb = this.getComponent(cc.RigidBody) || (p && p.getComponent(cc.RigidBody));
+        this._sprite = this.getComponent(cc.Sprite) || (p && p.getComponent(cc.Sprite));
+        this._physNode = this._rb ? this._rb.node : (p || this.node);
+        if (this._sprite) this._sprite.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+
+        if (this.atlas) {
+            this._applyFrame(ANIM_GOOMBA_WALK[0]);
+        } else {
+            cc.resources.load('Texture/Goomba', cc.SpriteAtlas, (err, atlas: cc.SpriteAtlas) => {
+                if (err || !atlas) { cc.error('[Goomba] atlas load failed', err); return; }
+                this.atlas = atlas;
+                this._applyFrame(ANIM_GOOMBA_WALK[0]);
+            });
         }
     }
 
+    start() {
+        let gw: cc.Node = this.node.parent;
+        while (gw && gw.name.trim() !== 'GameWorld') gw = gw.parent;
+        if (gw) this._playerNode = gw.getChildByName('Player');
+    }
+
+    private _applyFrame(name: string) {
+        if (!this._sprite || !this.atlas) return;
+        const frame = this.atlas.getSpriteFrame(name)
+                   ?? this.atlas.getSpriteFrame(name + '.png');
+        if (frame) this._sprite.spriteFrame = frame;
+    }
+
     update(dt: number) {
-        if (this._isDead) return;
-        this._rb.linearVelocity = cc.v2(this._speed * this._dir, this._rb.linearVelocity.y);
+        if (this.isDead) return;
+
+        if (this._playerNode && this._physNode) {
+            this._dir = this._playerNode.x > this._physNode.x ? 1 : -1;
+            this._physNode.scaleX = this._dir > 0
+                ? Math.abs(this._physNode.scaleX)
+                : -Math.abs(this._physNode.scaleX);
+        }
+
+        if (this._rb) {
+            this._rb.linearVelocity = cc.v2(this._speed * this._dir, this._rb.linearVelocity.y);
+        }
         this._updateAnimation(dt);
     }
 
     die() {
-        if (this._isDead) return;
-        this._isDead = true;
-        this._rb.linearVelocity = cc.v2(0, 0);
-        this._rb.type = cc.RigidBodyType.Static;
-        if (this._sprite && this.atlas) {
-            const frame = this.atlas.getSpriteFrame(ANIM_GOOMBA_DEAD[0]);
-            if (frame) this._sprite.spriteFrame = frame;
+        if (this.isDead) return;
+        this.isDead = true;
+        if (this._rb) {
+            this._rb.linearVelocity = cc.v2(0, 0);
+            this._rb.type = cc.RigidBodyType.Static;
         }
-        // Squish: shrink height
-        cc.tween(this.node)
+        this._applyFrame(ANIM_GOOMBA_DEAD[0]);
+        cc.tween(this._physNode || this.node)
             .to(0.1, { height: 10 })
             .delay(0.3)
-            .call(() => { if (this.node.isValid) this.node.destroy(); })
+            .call(() => {
+                const target = this._physNode || this.node;
+                if (target.isValid) target.destroy();
+            })
             .start();
     }
 
@@ -55,26 +89,7 @@ export default class EnemyGoomba extends cc.Component {
         if (this._animTimer >= 1 / this._animFPS) {
             this._animTimer = 0;
             this._animFrame = (this._animFrame + 1) % ANIM_GOOMBA_WALK.length;
-            if (this._sprite && this.atlas) {
-                const frame = this.atlas.getSpriteFrame(ANIM_GOOMBA_WALK[this._animFrame]);
-                if (frame) this._sprite.spriteFrame = frame;
-            }
-        }
-    }
-
-    onBeginContact(contact: cc.PhysicsContact, selfCollider: cc.PhysicsCollider, _other: cc.PhysicsCollider) {
-        if (this._isDead) return;
-        const manifold = contact.getWorldManifold();
-        if (!manifold) return;
-        const nx = manifold.normal.x;
-        const isSelf = contact.colliderA === selfCollider;
-        const normalX = isSelf ? nx : -nx;
-
-        // Hit a wall or platform on the side → turn around
-        if (Math.abs(normalX) > 0.6) {
-            this._dir *= -1;
-            this.node.scaleX = this._dir > 0 ? Math.abs(this.node.scaleX) : -Math.abs(this.node.scaleX);
+            this._applyFrame(ANIM_GOOMBA_WALK[this._animFrame]);
         }
     }
 }
-

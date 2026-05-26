@@ -466,7 +466,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 100,
+      "width": 120,
       "height": 40
     },
     "_anchorPoint": {
@@ -535,7 +535,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 100,
+      "width": 120,
       "height": 40
     },
     "_anchorPoint": {
@@ -651,7 +651,7 @@
     "_dstBlendFactor": 771,
     "_string": "WORLD 1-1",
     "_N$string": "WORLD 1-1",
-    "_fontSize": 20,
+    "_fontSize": 18,
     "_lineHeight": 40,
     "_enableWrapText": false,
     "_N$file": null,
@@ -1129,7 +1129,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 100,
+      "width": 120,
       "height": 40
     },
     "_anchorPoint": {
@@ -1245,7 +1245,7 @@
     "_dstBlendFactor": 771,
     "_string": "WORLD 1-2",
     "_N$string": "WORLD 1-2",
-    "_fontSize": 20,
+    "_fontSize": 18,
     "_lineHeight": 40,
     "_enableWrapText": false,
     "_N$file": null,
@@ -1304,8 +1304,8 @@
     "alignMode": 0,
     "_target": null,
     "_alignFlags": 45,
-    "_left": 0,
-    "_right": 0,
+    "_left": -10,
+    "_right": -10,
     "_top": 0,
     "_bottom": 0,
     "_verticalCenter": 0,

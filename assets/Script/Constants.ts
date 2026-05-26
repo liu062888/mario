@@ -35,10 +35,10 @@ export enum PlayerState { IDLE, WALK, RUN, JUMP, DEAD, INVINCIBLE }
 export enum MarioSize { SMALL, BIG }
 
 // Level world dimensions
-export const LEVEL_WIDTH = 5000;
+export const LEVEL_WIDTH = 2880;
 export const CANVAS_W = 960;
 export const CANVAS_H = 640;
-export const GROUND_Y = -240;   // top-of-ground y in world space
+export const GROUND_Y = -234;   // top-of-ground y in world space (Mario center at -210, feet at -234)
 export const GROUND_HALF_H = 48;
 
 // Animation frame names (no .png extension — loadDir strips it)
@@ -55,7 +55,7 @@ export const ANIM_BIG_DEAD     = ['mario_big_6'];
 export const ANIM_GOOMBA_WALK  = ['Goomba_0', 'Goomba_1'];
 export const ANIM_GOOMBA_DEAD  = ['Goomba_2'];
 
-export const ANIM_MUSHROOM     = ['items_0'];
+export const ANIM_MUSHROOM     = ['items_46'];
 export const ANIM_QBLOCK_ACTIVE  = ['items_10', 'items_11', 'items_12'];
 export const ANIM_QBLOCK_USED    = ['items_10'];
 
