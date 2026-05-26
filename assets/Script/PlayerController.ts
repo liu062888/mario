@@ -4,7 +4,7 @@ import EnemyGoomba from './EnemyGoomba';
 import QuestionBlock from './QuestionBlock';
 import {
     PLAYER_SPEED, PLAYER_JUMP_FORCE, SCALE, CANVAS_W, LEVEL_WIDTH,
-    MarioSize, PlayerState,
+    MarioSize, PlayerState, SCORE_COIN,
     ANIM_SMALL_IDLE, ANIM_SMALL_WALK, ANIM_SMALL_JUMP, ANIM_SMALL_DEAD,
     ANIM_BIG_IDLE, ANIM_BIG_WALK, ANIM_BIG_JUMP, ANIM_BIG_DEAD,
 } from './Constants';
@@ -141,6 +141,7 @@ export default class PlayerController extends cc.Component {
         this._checkGoombaCollisions();
         this._checkBlockCollisions();
         this._checkMushroomCollisions();
+        this._checkCoinCollisions();
     }
 
     private _checkGoombaCollisions() {
@@ -208,6 +209,27 @@ export default class PlayerController extends cc.Component {
                 this._collectMushroom();
                 child.destroy();
                 break;
+            }
+        }
+    }
+
+    private _checkCoinCollisions() {
+        if (!this.gameWorld) return;
+        const playerH = this._size === MarioSize.BIG ? 26 * SCALE : 16 * SCALE;
+        const marioHalfW = (16 * SCALE - 4) / 2; // 22px
+        for (const child of this.gameWorld.children) {
+            if (child.name !== 'Coin' || !child.active) continue;
+            const dx = Math.abs(this._trackX - child.x);
+            const dy = Math.abs(this._trackY - child.y);
+            const coinHalf = Math.max(child.width, child.height, 28) / 2;
+            if (dx < marioHalfW + coinHalf && dy < playerH / 2 + coinHalf) {
+                GameManager.instance && GameManager.instance.addScore(SCORE_COIN);
+                AudioManager.instance && AudioManager.instance.playSFX('Audio/coin');
+                child.active = false;
+                cc.tween(child)
+                    .to(0.15, { y: child.y + 30, opacity: 0 })
+                    .call(() => { if (child.isValid) child.destroy(); })
+                    .start();
             }
         }
     }
