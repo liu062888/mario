@@ -33,6 +33,7 @@ export default class PlayerController extends cc.Component {
     private _jumpPressed: boolean = false;
     private _jumpCooldown: number = 0;
     private _blockHitCooldown: number = 0;
+    private _hurtCooldown: number = 0;
     private _trackX: number = 0;
     private _trackY: number = 0;
     private _cameraX: number = 0;
@@ -133,6 +134,7 @@ export default class PlayerController extends cc.Component {
     update(dt: number) {
         if (this._jumpCooldown > 0) this._jumpCooldown -= dt;
         if (this._blockHitCooldown > 0) this._blockHitCooldown -= dt;
+        if (this._hurtCooldown > 0) this._hurtCooldown -= dt;
         if (this._isDead) return;
         this._handleMovement();
         this._updateAnimation(dt);
@@ -152,8 +154,11 @@ export default class PlayerController extends cc.Component {
             const playerH = this._size === MarioSize.BIG ? 26 * SCALE : 16 * SCALE;
             const dx = Math.abs(this._trackX - child.x);
             const dy = Math.abs(this._trackY - child.y);
-            const halfW = (this.node.width + child.width) / 2 - 4;
-            const halfH = (playerH + child.height) / 2 + 16;
+            const playerW = this.node.width > 0 ? this.node.width : (16 * SCALE);
+            const goombaW = child.width  > 0 ? child.width  : (16 * SCALE);
+            const goombaH = child.height > 0 ? child.height : (16 * SCALE);
+            const halfW = (playerW + goombaW) / 2 - 4;
+            const halfH = (playerH + goombaH) / 2 + 8;
             if (dx >= halfW || dy >= halfH) continue;
 
             // Stomp: Mario feet above Goomba center AND clearly falling (vy < -10 avoids false stomps on ground)
@@ -308,7 +313,23 @@ export default class PlayerController extends cc.Component {
         }
 
         if (otherNode.name === 'Goomba') {
-            this._handleEnemyContact(otherNode, ny);
+            if (!this._isInvincible && !this._isDead && this._hurtCooldown <= 0) {
+                const enemy = otherNode.getComponent(EnemyGoomba)
+                           || (otherNode.children[0] && otherNode.children[0].getComponent(EnemyGoomba));
+                if (enemy && !enemy.isDead) {
+                    // ny > 0.7 = clearly from above; vy < -10 = clearly falling
+                    const isStomp = ny > 0.7 && this._rb && this._rb.linearVelocity.y < -10;
+                    if (isStomp) {
+                        enemy.die();
+                        this._rb.linearVelocity = cc.v2(this._rb.linearVelocity.x, PLAYER_JUMP_FORCE * 0.65);
+                        this._setState(PlayerState.JUMP);
+                        GameManager.instance && GameManager.instance.addScore(100);
+                        AudioManager.instance && AudioManager.instance.playSFX('Audio/stomp');
+                    } else {
+                        this._getHurt();
+                    }
+                }
+            }
         }
 
         if (otherNode.name === 'Mushroom') {
@@ -341,25 +362,10 @@ export default class PlayerController extends cc.Component {
         }
     }
 
-    private _handleEnemyContact(enemyNode: cc.Node, ny: number) {
-        if (this._isInvincible) return;
-        // Stomp: contact normal points upward AND player falling/stationary
-        const isStomp = ny > 0.4 && this._rb && this._rb.linearVelocity.y <= 5;
-        if (isStomp) {
-            const enemy = enemyNode.getComponent(EnemyGoomba)
-                       || (enemyNode.children[0] && enemyNode.children[0].getComponent(EnemyGoomba));
-            if (enemy) enemy.die();
-            this._rb.linearVelocity = cc.v2(this._rb.linearVelocity.x, PLAYER_JUMP_FORCE * 0.65);
-            this._setState(PlayerState.JUMP);
-            GameManager.instance && GameManager.instance.addScore(100);
-            AudioManager.instance && AudioManager.instance.playSFX('Audio/stomp');
-        } else {
-            this._getHurt();
-        }
-    }
 
     private _getHurt() {
-        if (this._isInvincible || this._isDead) return;
+        if (this._isInvincible || this._isDead || this._hurtCooldown > 0) return;
+        this._hurtCooldown = 0.5;
         if (this._size === MarioSize.BIG) {
             this._shrink();
         } else {
@@ -424,6 +430,7 @@ export default class PlayerController extends cc.Component {
     respawn(x: number, y: number) {
         this._isDead = false;
         this._isInvincible = false;
+        this._hurtCooldown = 0;
         this._jumpPressed = false;
         this._groundContacts = 0;
         this._size = MarioSize.BIG;
