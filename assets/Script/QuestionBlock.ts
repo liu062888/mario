@@ -113,7 +113,8 @@ export default class QuestionBlock extends cc.Component {
         const mushNode = new cc.Node('Mushroom');
         mushNode.width = sz;
         mushNode.height = sz;
-        mushNode.setPosition(this.node.x, this.node.y + sz);
+        // Start at block top surface; will slide up before physics activates
+        mushNode.setPosition(this.node.x, this.node.y + sz * 0.5);
 
         const sp = mushNode.addComponent(cc.Sprite);
         sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
@@ -126,20 +127,25 @@ export default class QuestionBlock extends cc.Component {
             mushNode.color = cc.color(255, 60, 60);
         }
 
-        const rb = mushNode.addComponent(cc.RigidBody);
-        rb.type = cc.RigidBodyType.Dynamic;
-        rb.fixedRotation = true;
-
-        const col = mushNode.addComponent(cc.PhysicsBoxCollider);
-        col.size = cc.size(sz - 4, sz);
-        col.density = 0.5;
-        col.friction = 0.3;
-        col.restitution = 0;
-
         mushNode.group = 'item';
-        mushNode.addComponent(Mushroom);
-
         this.node.parent.addChild(mushNode);
+
+        // Slide up from inside the block, then hand off to physics
+        cc.tween(mushNode)
+            .by(0.5, { y: sz }, { easing: 'sineOut' })
+            .call(() => {
+                if (!mushNode.isValid) return;
+                const rb = mushNode.addComponent(cc.RigidBody);
+                rb.type = cc.RigidBodyType.Dynamic;
+                rb.fixedRotation = true;
+                const col = mushNode.addComponent(cc.PhysicsBoxCollider);
+                col.size = cc.size(sz - 4, sz);
+                col.density = 0.5;
+                col.friction = 0.3;
+                col.restitution = 0;
+                mushNode.addComponent(Mushroom);
+            })
+            .start();
     }
 
     private _applyFrame(name: string) {
