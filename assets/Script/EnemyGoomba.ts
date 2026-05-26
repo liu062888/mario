@@ -41,6 +41,14 @@ export default class EnemyGoomba extends cc.Component {
         this._initX = this._physNode ? this._physNode.x : this.node.x;
     }
 
+    /** Returns the world-space position of the physics body. */
+    getWorldPos(): cc.Vec2 {
+        const n = this._physNode || this.node;
+        let x = 0, y = 0, cur: cc.Node = n;
+        while (cur && cur.name !== 'Canvas') { x += cur.x; y += cur.y; cur = cur.parent; }
+        return cc.v2(x, y);
+    }
+
     private _applyFrame(name: string) {
         if (!this._sprite || !this.atlas) return;
         const frame = this.atlas.getSpriteFrame(name)

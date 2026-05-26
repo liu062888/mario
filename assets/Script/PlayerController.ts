@@ -146,24 +146,22 @@ export default class PlayerController extends cc.Component {
     private _checkGoombaCollisions() {
         if (this._isInvincible || !this.gameWorld) return;
         for (const child of this.gameWorld.children) {
-            if (child.name !== 'Goomba' || !child.active) continue;
+            if (!child.active) continue;
             const enemy = child.getComponent(EnemyGoomba)
                        || (child.children[0] && child.children[0].getComponent(EnemyGoomba));
             if (!enemy || enemy.isDead) continue;
 
             const playerH = this._size === MarioSize.BIG ? 26 * SCALE : 16 * SCALE;
-            const dx = Math.abs(this._trackX - child.x);
-            const dy = Math.abs(this._trackY - child.y);
-            const playerW = this.node.width > 0 ? this.node.width : (16 * SCALE);
-            const goombaW = child.width  > 0 ? child.width  : (16 * SCALE);
-            const goombaH = child.height > 0 ? child.height : (16 * SCALE);
-            const halfW = (playerW + goombaW) / 2 - 4;
-            const halfH = (playerH + goombaH) / 2 + 8;
+            const gp = enemy.getWorldPos();
+            const dx = Math.abs(this._trackX - gp.x);
+            const dy = Math.abs(this._trackY - gp.y);
+            // Use physics collider half-sizes (reliable; node.width may be 0 in editor)
+            const halfW = (16 * SCALE - 4) / 2 + 16 * SCALE / 2; // 22 + 24 = 46
+            const halfH = playerH / 2 + 16 * SCALE / 2 + 8;      // marioHalfH + goombaHalfH + tolerance
             if (dx >= halfW || dy >= halfH) continue;
 
-            // Stomp: Mario feet above Goomba center AND clearly falling (vy < -10 avoids false stomps on ground)
             const marioFeetY = this._trackY - playerH / 2;
-            const isStomp = marioFeetY > child.y + 5
+            const isStomp = marioFeetY > gp.y + 5
                          && this._rb && this._rb.linearVelocity.y < -10;
 
             if (isStomp) {
@@ -312,22 +310,20 @@ export default class PlayerController extends cc.Component {
             }
         }
 
-        if (otherNode.name === 'Goomba') {
-            if (!this._isInvincible && !this._isDead && this._hurtCooldown <= 0) {
-                const enemy = otherNode.getComponent(EnemyGoomba)
-                           || (otherNode.children[0] && otherNode.children[0].getComponent(EnemyGoomba));
-                if (enemy && !enemy.isDead) {
-                    // ny > 0.7 = clearly from above; vy < -10 = clearly falling
-                    const isStomp = ny > 0.7 && this._rb && this._rb.linearVelocity.y < -10;
-                    if (isStomp) {
-                        enemy.die();
-                        this._rb.linearVelocity = cc.v2(this._rb.linearVelocity.x, PLAYER_JUMP_FORCE * 0.65);
-                        this._setState(PlayerState.JUMP);
-                        GameManager.instance && GameManager.instance.addScore(100);
-                        AudioManager.instance && AudioManager.instance.playSFX('Audio/stomp');
-                    } else {
-                        this._getHurt();
-                    }
+        {
+            // Check by component, not by name — works even if RigidBody is on a child node
+            const enemy = otherNode.getComponent(EnemyGoomba)
+                       || (otherNode.parent && otherNode.parent.getComponent(EnemyGoomba));
+            if (enemy && !enemy.isDead && !this._isInvincible && !this._isDead && this._hurtCooldown <= 0) {
+                const isStomp = ny > 0.6 && this._rb && this._rb.linearVelocity.y < -10;
+                if (isStomp) {
+                    enemy.die();
+                    this._rb.linearVelocity = cc.v2(this._rb.linearVelocity.x, PLAYER_JUMP_FORCE * 0.65);
+                    this._setState(PlayerState.JUMP);
+                    GameManager.instance && GameManager.instance.addScore(100);
+                    AudioManager.instance && AudioManager.instance.playSFX('Audio/stomp');
+                } else {
+                    this._getHurt();
                 }
             }
         }
