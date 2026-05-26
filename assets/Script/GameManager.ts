@@ -62,8 +62,8 @@ export default class GameManager extends cc.Component {
             if (pc) pc.gameWorld = this._gameWorld;
         }
 
-        // Use fixed small-Mario half-height (16*SCALE/2=24) — playerNode.height may be 0 if sprite not yet loaded
-        const HALF_H = 16 * SCALE / 2;
+        // Use big-Mario half-height (26*SCALE/2=39) — Mario now starts as BIG; playerNode.height may be 0 if sprite not yet loaded
+        const HALF_H = 26 * SCALE / 2;
         if (this.playerNode) {
             this._spawnX = this.playerNode.x;
             this._spawnY = this.playerNode.y - HALF_H;  // foot level
@@ -74,6 +74,7 @@ export default class GameManager extends cc.Component {
         if (this._gameWorld) {
             this._createGround(groundSurfaceY);
             this._createDeathZone(groundSurfaceY);
+            this._createPipes(groundSurfaceY);
         }
 
         // Find UIManager
@@ -174,6 +175,97 @@ export default class GameManager extends cc.Component {
         this._gameWorld.addChild(node);
     }
 
+    private _createPipes(groundSurfaceY: number) {
+        const TILE = 16 * SCALE;
+        const BODY_W = TILE;
+        const HEAD_W = BODY_W + 12;
+        const HEAD_H = TILE / 2;
+
+        // [worldX, tileHeight]
+        const pipes: [number, number][] = [
+            [ 550, 2],
+            [1450, 1],
+            [1950, 2],
+        ];
+
+        for (const [px, tileH] of pipes) {
+            const bodyH = tileH * TILE;
+
+            const bodyNode = new cc.Node('Pipe');
+            bodyNode.setPosition(px, groundSurfaceY + bodyH / 2);
+            bodyNode.width = BODY_W;
+            bodyNode.height = bodyH;
+            const bodySp = bodyNode.addComponent(cc.Sprite);
+            bodySp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+            bodySp.spriteFrame = getWhiteFrame();
+            bodyNode.color = cc.color(0, 148, 0);
+            const bodyRb = bodyNode.addComponent(cc.RigidBody);
+            bodyRb.type = cc.RigidBodyType.Static;
+            const bodyCol = bodyNode.addComponent(cc.PhysicsBoxCollider);
+            bodyCol.size = cc.size(BODY_W, bodyH);
+            bodyNode.group = 'ground';
+            this._gameWorld.addChild(bodyNode);
+
+            const headNode = new cc.Node('PipeHead');
+            headNode.setPosition(px, groundSurfaceY + bodyH + HEAD_H / 2);
+            headNode.width = HEAD_W;
+            headNode.height = HEAD_H;
+            const headSp = headNode.addComponent(cc.Sprite);
+            headSp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+            headSp.spriteFrame = getWhiteFrame();
+            headNode.color = cc.color(0, 168, 0);
+            const headRb = headNode.addComponent(cc.RigidBody);
+            headRb.type = cc.RigidBodyType.Static;
+            const headCol = headNode.addComponent(cc.PhysicsBoxCollider);
+            headCol.size = cc.size(HEAD_W, HEAD_H);
+            headNode.group = 'ground';
+            this._gameWorld.addChild(headNode);
+        }
+    }
+
+    private _buildGameOverScreen() {
+        const canvas = cc.find('Canvas');
+        if (!canvas) { cc.director.loadScene('StartMenu'); return; }
+
+        const screen = new cc.Node('_GOScreen');
+        screen.zIndex = 1000;
+        canvas.addChild(screen);
+
+        // 黑色半透明背景
+        const bg = new cc.Node('bg');
+        bg.setPosition(0, 0);
+        bg.width = 960; bg.height = 640;
+        const sp = bg.addComponent(cc.Sprite);
+        sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+        sp.spriteFrame = getWhiteFrame();
+        bg.color = cc.color(0, 0, 0);
+        bg.opacity = 200;
+        screen.addChild(bg);
+
+        // GAME OVER 文字
+        const title = new cc.Node('title');
+        title.setPosition(0, 60);
+        const tl = title.addComponent(cc.Label);
+        tl.string = 'GAME OVER';
+        tl.fontSize = 72;
+        tl.lineHeight = 80;
+        title.color = cc.color(255, 60, 60);
+        screen.addChild(title);
+
+        // 分數
+        const scoreLine = new cc.Node('score');
+        scoreLine.setPosition(0, -20);
+        const sl = scoreLine.addComponent(cc.Label);
+        sl.string = `SCORE  ${String(this.score).padStart(6, '0')}`;
+        sl.fontSize = 40;
+        sl.lineHeight = 48;
+        scoreLine.color = cc.color(255, 255, 255);
+        screen.addChild(scoreLine);
+
+        // 4 秒後回主選單
+        this.scheduleOnce(() => cc.director.loadScene('StartMenu'), 4);
+    }
+
     // ── Game state ──────────────────────────────────────────────────────────
 
     update(dt: number) {
@@ -202,7 +294,7 @@ export default class GameManager extends cc.Component {
             this._isRespawning = false;
             this.scheduleOnce(() => {
                 AudioManager.instance && AudioManager.instance.playSFX('Audio/Game Over');
-                if (this._uiMgr) this._uiMgr.showGameOver();
+                this._buildGameOverScreen();
             }, 2);
         } else {
             this.scheduleOnce(() => this._respawnPlayer(), 2);
@@ -227,9 +319,7 @@ export default class GameManager extends cc.Component {
         AudioManager.instance && AudioManager.instance.playSFX('Audio/levelClear');
         const bonus = Math.floor(this.timeLeft) * 50;
         this.addScore(bonus);
-        this.scheduleOnce(() => {
-            if (this._uiMgr) this._uiMgr.showLevelClear();
-        }, 2);
+        // UI 由 FlagPole.scheduleOnce 負責顯示
     }
 
     retryLevel() {

@@ -22,14 +22,14 @@ export default class PlayerController extends cc.Component {
     private _sprite: cc.Sprite = null;
     private _col: cc.PhysicsBoxCollider = null;
     private _state: PlayerState = PlayerState.IDLE;
-    private _size: MarioSize = MarioSize.SMALL;
+    private _size: MarioSize = MarioSize.BIG;
     private _groundContacts: number = 0;
     private _isDead: boolean = false;
     private _isInvincible: boolean = false;
     private _facingRight: boolean = true;
     private _animFrame: number = 0;
     private _animTimer: number = 0;
-    private _currentFrames: string[] = ANIM_SMALL_IDLE;
+    private _currentFrames: string[] = ANIM_BIG_IDLE;
     private _jumpPressed: boolean = false;
     private _jumpCooldown: number = 0;
     private _blockHitCooldown: number = 0;
@@ -75,6 +75,13 @@ export default class PlayerController extends cc.Component {
         if (camera) camera.node.x = this._cameraX;
         if (this._uiNode) this._uiNode.x = this._cameraX;
         this._applyFrame();
+        // Set BIG Mario's initial physical size
+        const bigH = 26 * SCALE;
+        this.node.height = bigH;
+        if (this._col) {
+            this._col.size = cc.size(16 * SCALE - 4, bigH);
+            this._col.apply();
+        }
     }
 
     // Fallback: use velocity when onBeginContact is not firing
@@ -418,13 +425,14 @@ export default class PlayerController extends cc.Component {
         this._isInvincible = false;
         this._jumpPressed = false;
         this._groundContacts = 0;
-        this._size = MarioSize.SMALL;
-        this.node.height = 16 * SCALE;
+        this._size = MarioSize.BIG;
+        const bigH = 26 * SCALE;
+        this.node.height = bigH;
         this.node.opacity = 255;
         this._keys = {};
         if (this._col) {
             this._col.enabled = true;
-            this._col.size = cc.size(16 * SCALE - 4, 16 * SCALE);
+            this._col.size = cc.size(16 * SCALE - 4, bigH);
             this._col.apply();
         }
         if (this._rb) {

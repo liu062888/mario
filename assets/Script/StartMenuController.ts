@@ -10,10 +10,6 @@ export default class StartMenuController extends cc.Component {
     }
 
     onStartButton() {
-        cc.director.loadScene('GameScene');
-    }
-
-    onLevelSelectButton() {
         cc.director.loadScene('LevelSelect');
     }
 }

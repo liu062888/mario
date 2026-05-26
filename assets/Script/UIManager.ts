@@ -25,7 +25,10 @@ export default class UIManager extends cc.Component {
     }
 
     setTimer(t: number) {
-        if (this.timerLabel) this.timerLabel.string = String(t).padStart(3, '0');
+        if (!this.timerLabel) return;
+        this.timerLabel.string = String(t).padStart(3, '0');
+        // 剩不到 100 秒變紅色
+        this.timerLabel.node.color = t < 100 ? cc.color(255, 60, 60) : cc.color(255, 255, 255);
     }
 
     showGameOver() {

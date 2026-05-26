@@ -44,10 +44,11 @@ export default class FlagPole extends cc.Component {
     }
 
     private _onPlayerReach(playerNode: cc.Node) {
+        // 停 BGM
         AudioManager.instance && AudioManager.instance.stopBGM();
-        AudioManager.instance && AudioManager.instance.playSFX('Audio/flagPole');
+        AudioManager.instance && AudioManager.instance.playSFX('Audio/levelClear');
 
-        // Freeze player completely
+        // 凍結玩家
         const rb = playerNode.getComponent(cc.RigidBody)
                || (playerNode.parent && playerNode.parent.getComponent(cc.RigidBody));
         if (rb) {
@@ -55,8 +56,16 @@ export default class FlagPole extends cc.Component {
             rb.type = cc.RigidBodyType.Static;
         }
 
+        // 通知 GameManager 停止計時、加分
+        const gm = GameManager.instance;
+        if (gm) {
+            gm.isLevelClear = true;
+            gm.addScore(Math.floor(gm.timeLeft) * 50);
+        }
+
+        // 3 秒後跳回主選單
         this.scheduleOnce(() => {
-            GameManager.instance && GameManager.instance.onLevelClear();
-        }, 1.0);
+            cc.director.loadScene('StartMenu');
+        }, 3);
     }
 }
