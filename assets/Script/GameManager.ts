@@ -1,7 +1,6 @@
 import AudioManager from './AudioManager';
 import UIManager from './UIManager';
 import PlayerController from './PlayerController';
-import Coin from './Coin';
 import {
     CANVAS_W, GROUND_Y, GROUND_HALF_H, LEVEL_WIDTH, SCALE,
     INITIAL_LIVES, INITIAL_TIMER, getWhiteFrame
@@ -76,7 +75,6 @@ export default class GameManager extends cc.Component {
             this._createGround(groundSurfaceY);
             this._createDeathZone(groundSurfaceY);
             this._createPipes(groundSurfaceY);
-            this._createCoins(groundSurfaceY);
         }
 
         // Find UIManager
@@ -225,58 +223,6 @@ export default class GameManager extends cc.Component {
         }
     }
 
-    private _createCoins(groundSurfaceY: number) {
-        const TILE = 16 * SCALE;
-        // [startX, yAboveGround, count, spacing]
-        const groups: [number, number, number, number][] = [
-            [ 250, TILE * 2, 5, TILE],   // 5 coins near start
-            [ 750, TILE * 3, 3, TILE],   // 3 high coins mid-left
-            [1000, TILE * 2, 3, TILE],   // 3 coins before the gap
-            [1350, TILE * 2, 4, TILE],   // 4 coins after the gap
-            [1750, TILE * 2, 5, TILE],   // 5 coins mid-right
-            [2300, TILE * 4, 3, TILE],   // 3 high coins near end
-        ];
-
-        const coinSize = TILE * 0.6; // 28px — smaller than a tile
-        const coinNodes: cc.Node[] = [];
-
-        for (const [startX, yOff, count, spacing] of groups) {
-            for (let i = 0; i < count; i++) {
-                const node = new cc.Node('Coin');
-                node.width = coinSize;
-                node.height = coinSize;
-                node.setPosition(startX + i * spacing, groundSurfaceY + yOff);
-
-                const sp = node.addComponent(cc.Sprite);
-                sp.sizeMode = cc.Sprite.SizeMode.CUSTOM;
-                sp.spriteFrame = getWhiteFrame();
-                node.color = cc.color(255, 215, 0);
-
-                node.addComponent(Coin);
-                this._gameWorld.addChild(node);
-                coinNodes.push(node);
-            }
-        }
-
-        // Load items atlas and apply coin sprite + spin animation frames
-        cc.resources.load('Texture/items', cc.SpriteAtlas, (err, atlas: cc.SpriteAtlas) => {
-            if (err || !atlas) return;
-            const frameNames = ['items_0', 'items_1', 'items_2', 'items_3'];
-            const frames = frameNames
-                .map(n => atlas.getSpriteFrame(n) ?? atlas.getSpriteFrame(n + '.png'))
-                .filter(f => !!f) as cc.SpriteFrame[];
-            for (const node of coinNodes) {
-                if (!node.isValid) continue;
-                const coin = node.getComponent(Coin);
-                if (coin) coin.setFrames(frames.length > 0 ? frames : []);
-                if (frames.length === 0) {
-                    const frame = atlas.getSpriteFrame('items_13') ?? atlas.getSpriteFrame('items_13.png');
-                    const sp = node.getComponent(cc.Sprite);
-                    if (frame && sp) { sp.spriteFrame = frame; node.color = cc.color(255, 255, 255); }
-                }
-            }
-        });
-    }
 
     private _buildGameOverScreen() {
         const canvas = cc.find('Canvas');
