@@ -1,11 +1,15 @@
+import { getWhiteFrame } from './Constants';
+
 const { ccclass, property } = cc._decorator;
+
+// Spin animation frame names to try in order
+const COIN_ANIM_NAMES = ['items_0', 'items_1', 'items_2', 'items_3'];
+const COIN_STATIC_NAME = 'items_13';
 
 @ccclass
 export default class Coin extends cc.Component {
 
     @property(cc.SpriteAtlas) atlas: cc.SpriteAtlas = null;
-    /** Frame names inside the atlas for spin animation (e.g. items_0, items_1, items_2, items_3) */
-    @property([cc.String]) frameNames: string[] = [];
 
     private _sprite: cc.Sprite = null;
     private _frames: cc.SpriteFrame[] = [];
@@ -18,21 +22,44 @@ export default class Coin extends cc.Component {
             this._sprite = this.node.addComponent(cc.Sprite);
             this._sprite.sizeMode = cc.Sprite.SizeMode.CUSTOM;
         }
-        this._loadFrames();
+
+        if (this.atlas) {
+            this._applyAtlas(this.atlas);
+        } else {
+            cc.resources.load('Texture/items', cc.SpriteAtlas, (err, atlas: cc.SpriteAtlas) => {
+                if (err || !atlas) {
+                    // fallback: yellow square
+                    this._sprite.spriteFrame = getWhiteFrame();
+                    this.node.color = cc.color(255, 215, 0);
+                    return;
+                }
+                this.atlas = atlas;
+                this._applyAtlas(atlas);
+            });
+        }
     }
 
-    private _loadFrames() {
-        if (!this.atlas || this.frameNames.length === 0) return;
-        this._frames = this.frameNames
-            .map(n => this.atlas.getSpriteFrame(n) ?? this.atlas.getSpriteFrame(n + '.png'))
+    private _applyAtlas(atlas: cc.SpriteAtlas) {
+        // Try spin frames first
+        const frames = COIN_ANIM_NAMES
+            .map(n => atlas.getSpriteFrame(n) ?? atlas.getSpriteFrame(n + '.png'))
             .filter(f => !!f) as cc.SpriteFrame[];
-        if (this._frames.length > 0) this._sprite.spriteFrame = this._frames[0];
+
+        if (frames.length > 0) {
+            this._frames = frames;
+            this._sprite.spriteFrame = frames[0];
+        } else {
+            // Fallback to static coin frame
+            const f = atlas.getSpriteFrame(COIN_STATIC_NAME)
+                   ?? atlas.getSpriteFrame(COIN_STATIC_NAME + '.png');
+            if (f) this._sprite.spriteFrame = f;
+        }
     }
 
     update(dt: number) {
         if (this._frames.length <= 1 || !this._sprite) return;
         this._animTimer += dt;
-        if (this._animTimer >= 0.1) {
+        if (this._animTimer >= 0.12) {
             this._animTimer = 0;
             this._animFrame = (this._animFrame + 1) % this._frames.length;
             this._sprite.spriteFrame = this._frames[this._animFrame];
