@@ -18,7 +18,7 @@
       false,
       true,
       true,
-      true
+      false
     ],
     [
       false,
@@ -35,7 +35,7 @@
     ],
     [
       false,
-      true,
+      false,
       true,
       false,
       false
@@ -67,5 +67,6 @@
       "enable": false
     }
   },
-  "start-scene": "29cfd07b-7f30-42f2-8c24-1e7692587b29"
+  "start-scene": "60a84292-2ce0-4910-ade8-681b8c361ba0",
+  "last-module-event-record-time": 1779881313633
 }
