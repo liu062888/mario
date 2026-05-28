@@ -9,6 +9,14 @@ import {
 
 const { ccclass, property } = cc._decorator;
 
+function initViewResize() {
+    if (!cc || !cc.view) return;
+    cc.view.resizeWithBrowserSize(true);
+    if (cc.ResolutionPolicy && typeof cc.ResolutionPolicy.FIXED_HEIGHT !== 'undefined') {
+        cc.view.setDesignResolutionSize(960, 640, cc.ResolutionPolicy.FIXED_HEIGHT);
+    }
+}
+
 /**
  * GameManager – hybrid mode.
  * Code handles: Ground physics, DeathZone.
@@ -42,6 +50,7 @@ export default class GameManager extends cc.Component {
     private _gameWorld: cc.Node = null;
 
     onLoad() {
+        initViewResize();
         GameManager.instance = this;
         const pm = cc.director.getPhysicsManager();
         pm.enabled = true;
